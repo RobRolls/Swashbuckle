@@ -316,6 +316,31 @@ namespace Swashbuckle.Tests.Swagger
         }
 
         [Test]
+        public void It_exposes_config_to_choose_schema_id()
+        {
+            SetUpDefaultRouteFor<ProductsController>();
+            SetUpHandler(c => c.SchemaId(t => "my custom name"));
+
+            var swagger = GetContent<JObject>("http://tempuri.org/swagger/docs/v1");
+            var defintitions = swagger["definitions"];
+
+            Assert.IsNotNull(defintitions["my custom name"]);
+        }
+
+        [Test]
+        public void It_exposes_config_to_modify_schema_ids()
+        {
+            SetUpDefaultRouteFor<ConflictingTypesController>();
+            // We have to know the default implementation of FriendlyId before we can modify it's output.
+            SetUpHandler(c => { c.SchemaId(t => t.FriendlyId(true).Replace("Swashbuckle.Dummy.Controllers.", String.Empty)); });
+
+            var swagger = GetContent<JObject>("http://tempuri.org/swagger/docs/v1");
+            var defintitions = swagger["definitions"];
+
+            Assert.IsNotNull(defintitions["Requests.Blog"]);
+        }
+
+        [Test]
         public void It_handles_nested_types()
         {
             SetUpDefaultRouteFor<NestedTypesController>();
@@ -488,6 +513,17 @@ namespace Swashbuckle.Tests.Swagger
             SetUpDefaultRouteFor<ConflictingTypesController>();
 
             var swagger = GetContent<JObject>("http://tempuri.org/swagger/docs/v1");
+        }
+
+        [Test]
+        public void It_always_marks_path_parameters_as_required()
+        {
+            SetUpDefaultRouteFor<PathRequiredController>();
+
+            var swagger = GetContent<JObject>("http://tempuri.org/swagger/docs/v1");
+            var required = (bool)swagger["paths"]["/pathrequired/{id}"]["get"]["parameters"][0]["required"];
+
+            Assert.IsTrue(required);
         }
     }
 }

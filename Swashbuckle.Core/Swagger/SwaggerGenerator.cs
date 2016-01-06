@@ -35,7 +35,7 @@ namespace Swashbuckle.Swagger
                 _options.SchemaFilters,
                 _options.ModelFilters,
                 _options.IgnoreObsoleteProperties,
-                _options.UseFullTypeNameInSchemaIds,
+                _options.SchemaIdSelector,
                 _options.DescribeAllEnumsAsStrings,
                 _options.DescribeStringEnumsInCamelCase);
 
@@ -51,11 +51,12 @@ namespace Swashbuckle.Swagger
                 .ToDictionary(group => "/" + group.Key, group => CreatePathItem(group, schemaRegistry));
 
             var rootUri = new Uri(rootUrl);
+            var port = (!rootUri.IsDefaultPort) ? ":" + rootUri.Port : string.Empty;
 
             var swaggerDoc = new SwaggerDocument
             {
                 info = info,
-                host = rootUri.Host + ":" + rootUri.Port,
+                host = rootUri.Host + port,
                 basePath = (rootUri.AbsolutePath != "/") ? rootUri.AbsolutePath : null,
                 schemes = (_options.Schemes != null) ? _options.Schemes.ToList() : new[] { rootUri.Scheme }.ToList(),
                 paths = paths,
@@ -178,7 +179,7 @@ namespace Swashbuckle.Swagger
                 return parameter; 
             }
 
-            parameter.required = !paramDesc.ParameterDescriptor.IsOptional;
+            parameter.required = inPath || !paramDesc.ParameterDescriptor.IsOptional;
             parameter.@default = paramDesc.ParameterDescriptor.DefaultValue;
 
             var schema = schemaRegistry.GetOrRegister(paramDesc.ParameterDescriptor.ParameterType);
